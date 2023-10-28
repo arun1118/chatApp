@@ -1,10 +1,14 @@
 import React, { useState } from 'react'
 import AddAvatar from "../img/addAvatar.png";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth,storage } from '../firebase';
+import { auth,storage, db } from '../firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { doc, setDoc } from "firebase/firestore"; 
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Register = () => {
+  const navigate=useNavigate();
 
   const [err,setErr]=useState(false);
   
@@ -32,6 +36,8 @@ const Register = () => {
           case 'running':
             console.log('Upload is running');
             break;
+          default:
+            break;
         }
       }
       ,(error)=>{
@@ -40,10 +46,15 @@ const Register = () => {
       ,()=>{
         getDownloadURL(uploadTask.snapshot.ref).then(async(downloadURL)=>{
         console.log('File available at', downloadURL);
-        await updateProfile(res.user, {displayName, photoURL: downloadURL})
+        await updateProfile(res.user, {displayName, photoURL: downloadURL});
+        await setDoc(doc(db, "users", res.user.uid), {uid: res.user.uid, displayName, email, photoURL : downloadURL})
+        await setDoc(doc(db, "userChats", res.user.uid), {})
+        navigate("/");
       });
       }
       );
+
+      
     } 
     catch (error) {
       setErr(true);
@@ -54,7 +65,7 @@ const Register = () => {
     <div className='formContainer'>
         <div className="formWrapper">
             <span className="logo">Talkative</span>
-            <span className="title">Login</span>
+            <span className="title">Register</span>
             <form onSubmit={handleSubmit}>
                 <input type="text" placeholder='Enter your name'/>
                 <input type="email" placeholder='Enter your email'/>
@@ -67,7 +78,7 @@ const Register = () => {
                 <button>Register</button>
                 {err && <sapn>Something went wrong!</sapn>}
             </form>
-            <p>Already have an account? Login</p>
+            <p>Already have an account? <Link to="/login">Login</Link></p>
         </div>
     </div>
   )
